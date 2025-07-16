@@ -26,17 +26,6 @@ struct RestaurantViewModel: Identifiable {
         let discounts = deals.compactMap { Int($0.discount) }
         return discounts.max() ?? 0
     }
-    
-    init(from restaurant: Restaurant) {
-        self.id = restaurant.objectId
-        self.name = restaurant.name
-        self.address = "\(restaurant.address1), \(restaurant.suburb)"
-        self.shortAddress = "0.5km Away, \(restaurant.suburb)"
-        self.cuisines = restaurant.cuisines.joined(separator: ", ")
-        self.imageURL = URL(string: restaurant.imageLink)
-        self.operatingHours = "\(restaurant.open) - \(restaurant.close)"
-        self.deals = restaurant.deals.map { DealViewModel(from: $0) }
-    }
 }
 
 struct DealViewModel: Identifiable {

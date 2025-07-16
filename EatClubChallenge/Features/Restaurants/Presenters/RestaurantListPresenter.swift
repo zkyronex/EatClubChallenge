@@ -14,6 +14,7 @@ protocol RestaurantListPresenting: ObservableObject {
     
     func loadRestaurants()
     func refresh()
+    func select(restaurant: RestaurantViewModel)
 }
 
 final class RestaurantListPresenter: RestaurantListPresenting {
@@ -22,9 +23,11 @@ final class RestaurantListPresenter: RestaurantListPresenting {
     @Published private(set) var errorMessage: String?
     @Published var searchText: String = ""
     
+    let detailsSubject = PassthroughSubject<RestaurantViewModel, Never>()
+    var cancellables = Set<AnyCancellable>()
+    
     private var allRestaurants: [RestaurantViewModel] = []
     private let fetcher: RestaurantFetching
-    private var cancellables = Set<AnyCancellable>()
     
     var filteredRestaurants: [RestaurantViewModel] {
         if searchText.isEmpty {
@@ -59,8 +62,8 @@ final class RestaurantListPresenter: RestaurantListPresenting {
         errorMessage = nil
         
         fetcher.fetchRestaurants()
-            .map { restaurants in
-                restaurants.map { RestaurantViewModel(from: $0) }
+            .map { [unowned self] restaurants in
+                restaurants.map { makeViewModel(restaurant: $0) }
             }
             .map { viewModels in
                 // Sort by best deals first (highest discount percentage)
@@ -88,5 +91,23 @@ final class RestaurantListPresenter: RestaurantListPresenting {
     func refresh() {
         searchText = ""
         loadRestaurants()
+    }
+    
+    func select(restaurant: RestaurantViewModel) {
+        // Point to intercept or do some logic processing before sending to the Router
+        detailsSubject.send(restaurant)
+    }
+    
+    private func makeViewModel(restaurant: Restaurant) -> RestaurantViewModel {
+        RestaurantViewModel(
+            id: restaurant.objectId,
+            name: restaurant.name,
+            address: "\(restaurant.address1), \(restaurant.suburb)",
+            shortAddress: "0.5km Away, \(restaurant.suburb)",
+            cuisines: restaurant.cuisines.joined(separator: ", "),
+            imageURL: URL(string: restaurant.imageLink),
+            operatingHours: "\(restaurant.open) - \(restaurant.close)",
+            deals: restaurant.deals.map { DealViewModel(from: $0) }
+        )
     }
 }

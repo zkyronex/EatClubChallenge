@@ -71,10 +71,9 @@ struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(presenter.filteredRestaurants) { restaurant in
-                    RestaurantCardView(restaurant: restaurant)
-                        .onTapGesture {
-                            onRestaurantSelected?(restaurant)
-                        }
+                    Button(action: { presenter.select(restaurant: restaurant) }) {
+                        RestaurantCardView(restaurant: restaurant)
+                    }
                 }
             }
             .padding(16)

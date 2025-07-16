@@ -1,30 +1,29 @@
+import Combine
 import UIKit
 import SwiftUI
 
-final class RestaurantRouter: FeatureRouting {
+final class RestaurantRouter: Router, Routable {
+    
     let navigationController: UINavigationController
-    var childRouters: [FeatureRouting] = []
-    weak var parentRouter: FeatureRouting?
     
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
+    var finish: AnyPublisher<Void, Never> {
+        Empty<Void, Never>(completeImmediately: false).eraseToAnyPublisher()
     }
-    
-    func start() {
-        showRestaurantList()
-    }
-    
-    func showRestaurantList() {
+
+    var cancellables = Set<AnyCancellable>()
+
+    override init() {
         let presenter = RestaurantListPresenter()
-        var view = RestaurantListView(presenter: presenter)
+        let view = RestaurantListView(presenter: presenter)
+        let viewController = UIHostingController(rootView: view)
+        self.navigationController = UINavigationController(rootViewController: viewController)
         
-        // Set up navigation callback
-        view.onRestaurantSelected = { [weak self] restaurant in
+        super.init()
+        
+        presenter.detailsSubject.sink { [weak self] restaurant in
             self?.showRestaurantDetail(restaurant: restaurant)
         }
-        
-        let viewController = UIHostingController(rootView: view)
-        navigationController.setViewControllers([viewController], animated: false)
+        .store(in: &presenter.cancellables)
     }
     
     func showRestaurantDetail(restaurant: RestaurantViewModel) {

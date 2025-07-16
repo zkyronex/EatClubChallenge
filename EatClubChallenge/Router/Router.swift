@@ -1,55 +1,24 @@
 import UIKit
+import Combine
 
-protocol Routing {
-    func navigate(to route: Route)
-    func pop()
-    func popToRoot()
-    func present(_ route: Route, animated: Bool, completion: (() -> Void)?)
-    func dismiss(animated: Bool, completion: (() -> Void)?)
+protocol Routable: AnyObject {
+
+    var finish: AnyPublisher<Void, Never> { get }
+    var cancellables: Set<AnyCancellable> { get set }
 }
 
-final class Router: Routing {
-    private weak var navigationController: UINavigationController?
-    
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
-    }
-    
-    func navigate(to route: Route) {
-        let viewController = route.viewController
-        navigationController?.pushViewController(viewController, animated: true)
-    }
-    
-    func pop() {
-        navigationController?.popViewController(animated: true)
-    }
-    
-    func popToRoot() {
-        navigationController?.popToRootViewController(animated: true)
-    }
-    
-    func present(_ route: Route, animated: Bool = true, completion: (() -> Void)? = nil) {
-        let viewController = route.viewController
-        navigationController?.present(viewController, animated: animated, completion: completion)
-    }
-    
-    func dismiss(animated: Bool = true, completion: (() -> Void)? = nil) {
-        navigationController?.dismiss(animated: animated, completion: completion)
-    }
-}
+class Router: NSObject {
 
-// MARK: - App Router Singleton
-final class AppRouter {
-    static let shared = AppRouter()
-    private var router: Router?
-    
-    private init() {}
-    
-    func configure(with navigationController: UINavigationController) {
-        self.router = Router(navigationController: navigationController)
-    }
-    
-    var current: Routing? {
-        return router
+    private(set) var childRouters: [Routable] = []
+    private var cancellables = Set<AnyCancellable>()
+
+    func add(child router: Routable) {
+        childRouters.append(router)
+
+        router.finish
+            .sink(receiveValue: { [weak self, weak router] _ in
+                self?.childRouters.removeAll { $0 === router }
+            })
+            .store(in: &router.cancellables)
     }
 }
