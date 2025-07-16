@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct RestaurantDetailView: View {
-    let restaurant: RestaurantViewModel
+    @ObservedObject var presenter: RestaurantDetailPresenter
     @Environment(\.dismiss) var dismiss
+    
+    init(presenter: RestaurantDetailPresenter) {
+        self.presenter = presenter
+    }
     
     var body: some View {
         ScrollView {
@@ -10,7 +14,7 @@ struct RestaurantDetailView: View {
                 // Hero image with carousel dots
                 ZStack(alignment: .bottom) {
                     // Restaurant image
-                    AsyncImage(url: restaurant.imageURL) { image in
+                    AsyncImage(url: presenter.restaurant?.imageURL.flatMap(URL.init)) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -34,14 +38,16 @@ struct RestaurantDetailView: View {
                     VStack {
                         HStack {
                             Spacer()
-                            Text("★ New")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.eatClubRed)
-                                .cornerRadius(4)
-                                .padding()
+                            if presenter.restaurant?.isNew == true {
+                                Text("★ New")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.eatClubRed)
+                                    .cornerRadius(4)
+                                    .padding()
+                            }
                         }
                         Spacer()
                     }
@@ -50,10 +56,18 @@ struct RestaurantDetailView: View {
                 VStack(spacing: 0) {
                     // Action buttons
                     HStack(spacing: 0) {
-                        ActionButton(icon: "doc.text", text: "Menu")
-                        ActionButton(icon: "phone", text: "Call us")
-                        ActionButton(icon: "location", text: "Location")
-                        ActionButton(icon: "heart", text: "Favourite")
+                        ActionButton(icon: "doc.text", text: "Menu") {
+                            presenter.showMenu()
+                        }
+                        ActionButton(icon: "phone", text: "Call us") {
+                            presenter.callRestaurant()
+                        }
+                        ActionButton(icon: "location", text: "Location") {
+                            presenter.showLocation()
+                        }
+                        ActionButton(icon: "heart", text: "Favourite") {
+                            presenter.toggleFavourite()
+                        }
                     }
                     .padding(.vertical, 16)
                     .background(Color.white)
@@ -62,12 +76,12 @@ struct RestaurantDetailView: View {
                     
                     // Restaurant info
                     VStack(alignment: .leading, spacing: 16) {
-                        Text(restaurant.name)
+                        Text(presenter.restaurant?.name ?? "")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.primaryText)
                         
                         HStack(spacing: 16) {
-                            Text(restaurant.cuisines)
+                            Text(presenter.restaurant?.cuisines ?? "")
                                 .font(.system(size: 16))
                                 .foregroundColor(.secondaryText)
                             
@@ -82,7 +96,7 @@ struct RestaurantDetailView: View {
                                 .font(.system(size: 16))
                                 .foregroundColor(.secondaryText)
                             
-                            Text("Hours: \(restaurant.operatingHours)")
+                            Text(presenter.restaurant?.operatingHours ?? "")
                                 .font(.system(size: 16))
                                 .foregroundColor(.primaryText)
                         }
@@ -93,7 +107,7 @@ struct RestaurantDetailView: View {
                                 .font(.system(size: 16))
                                 .foregroundColor(.secondaryText)
                             
-                            Text(restaurant.address)
+                            Text(presenter.restaurant?.address ?? "")
                                 .font(.system(size: 16))
                                 .foregroundColor(.primaryText)
                         }
@@ -103,10 +117,12 @@ struct RestaurantDetailView: View {
                     .background(Color.white)
                     
                     // Deals section
-                    if !restaurant.deals.isEmpty {
+                    if let deals = presenter.restaurant?.deals, !deals.isEmpty {
                         VStack(spacing: 12) {
-                            ForEach(restaurant.deals) { deal in
-                                DealCard(deal: deal)
+                            ForEach(deals) { deal in
+                                DealCard(deal: deal) {
+                                    presenter.redeemDeal(deal)
+                                }
                             }
                         }
                         .padding(16)
@@ -121,23 +137,27 @@ struct RestaurantDetailView: View {
 struct ActionButton: View {
     let icon: String
     let text: String
+    let action: () -> Void
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.secondaryText)
-            
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundColor(.secondaryText)
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(.secondaryText)
+                
+                Text(text)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 
 struct DealCard: View {
     let deal: DealViewModel
+    let onRedeem: () -> Void
     
     var body: some View {
         HStack {
@@ -154,8 +174,8 @@ struct DealCard: View {
                         .foregroundColor(.eatClubRed)
                 }
                 
-                if let availability = deal.availability {
-                    Text("Between \(availability)")
+                if !deal.availability.isEmpty {
+                    Text("Between \(deal.availability)")
                         .font(.system(size: 14))
                         .foregroundColor(.secondaryText)
                 }
@@ -167,9 +187,7 @@ struct DealCard: View {
             
             Spacer()
             
-            Button("Redeem") {
-                // Handle redeem action
-            }
+            Button("Redeem", action: onRedeem)
             .padding(.horizontal, 24)
             .padding(.vertical, 10)
             .background(

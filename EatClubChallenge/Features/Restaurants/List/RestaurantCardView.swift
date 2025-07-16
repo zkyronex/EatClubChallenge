@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct RestaurantCardView: View {
-    let restaurant: RestaurantViewModel
+    let restaurant: RestaurantListViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Image with deal overlay
             ZStack(alignment: .topLeading) {
                 // Restaurant image
-                AsyncImage(url: restaurant.imageURL) { image in
+                AsyncImage(url: restaurant.imageURL.flatMap(URL.init)) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -19,37 +19,17 @@ struct RestaurantCardView: View {
                 .clipped()
                 
                 // Deal tag overlay
-                if let bestDeal = restaurant.bestDeal {
+                if restaurant.maxDiscount > 0 {
                     HStack(spacing: 4) {
-                        if bestDeal.isLightning {
-                            Image(systemName: "bolt.fill")
-                                .foregroundColor(.lightningYellow)
-                                .font(.system(size: 14))
-                        }
-                        
-                        Text("\(bestDeal.discount)% off")
+                        Text("\(restaurant.maxDiscount)% off")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
-                        
-                        if bestDeal.isDineIn {
-                            Text("- Dine In")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                        }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Color.dealTagBackground)
                     .cornerRadius(4)
                     .padding(12)
-                    
-                    if bestDeal.isDineIn && bestDeal.availability != nil {
-                        Text(bestDeal.availability ?? "")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.top, 40)
-                    }
                 }
             }
             

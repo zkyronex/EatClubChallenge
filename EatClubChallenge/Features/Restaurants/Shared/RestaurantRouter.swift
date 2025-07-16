@@ -50,8 +50,9 @@ final class RestaurantRouter: Router, Routable {
         .store(in: &presenter.cancellables)
     }
     
-    func showRestaurantDetail(restaurant: RestaurantViewModel) {
-        let detailView = RestaurantDetailView(restaurant: restaurant)
+    func showRestaurantDetail(restaurant: Restaurant) {
+        let presenter = RestaurantDetailPresenter(restaurant: restaurant)
+        let detailView = RestaurantDetailView(presenter: presenter)
         let viewController = UIHostingController(rootView: detailView)
         
         // Configure navigation items for detail view
@@ -64,10 +65,5 @@ final class RestaurantRouter: Router, Routable {
         )
         
         navigationController.pushViewController(viewController, animated: true)
-    }
-    
-    private func showDealDetail(deal: DealViewModel) {
-        // For now, show deal in the same navigation stack
-        // If deals become complex, we can create a DealRouter as a child
     }
 }

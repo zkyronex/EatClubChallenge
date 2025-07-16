@@ -2,12 +2,11 @@ import SwiftUI
 
 struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
     @ObservedObject var presenter: Presenter
-    var onRestaurantSelected: ((RestaurantViewModel) -> Void)?
+    var onRestaurantSelected: ((RestaurantListViewModel) -> Void)?
     @State private var selectedTab: Int = 1 // Moon icon selected by default
     
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
             SearchBarView(
                 searchText: $presenter.searchText,
                 placeholder: "e.g. chinese, pizza"
@@ -16,7 +15,6 @@ struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
             .padding(.vertical, 8)
             .background(Color.white)
             
-            // Content
             content
         }
         .background(Color.backgroundGray)

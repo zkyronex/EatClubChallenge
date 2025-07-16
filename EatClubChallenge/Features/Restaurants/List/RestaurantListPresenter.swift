@@ -6,30 +6,31 @@ protocol RestaurantFetching {
 }
 
 protocol RestaurantListPresenting: ObservableObject {
-    var restaurants: [RestaurantViewModel] { get }
-    var filteredRestaurants: [RestaurantViewModel] { get }
+    var restaurants: [RestaurantListViewModel] { get }
+    var filteredRestaurants: [RestaurantListViewModel] { get }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
     var searchText: String { get set }
     
     func loadRestaurants()
     func refresh()
-    func select(restaurant: RestaurantViewModel)
+    func select(restaurant: RestaurantListViewModel)
 }
 
 final class RestaurantListPresenter: RestaurantListPresenting {
-    @Published private(set) var restaurants: [RestaurantViewModel] = []
+    @Published private(set) var restaurants: [RestaurantListViewModel] = []
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var errorMessage: String?
     @Published var searchText: String = ""
     
-    let detailsSubject = PassthroughSubject<RestaurantViewModel, Never>()
+    let detailsSubject = PassthroughSubject<Restaurant, Never>()
     var cancellables = Set<AnyCancellable>()
     
-    private var allRestaurants: [RestaurantViewModel] = []
+    private var allRestaurants: [RestaurantListViewModel] = []
+    private var restaurantModels: [Restaurant] = []
     private let fetcher: RestaurantFetching
     
-    var filteredRestaurants: [RestaurantViewModel] {
+    var filteredRestaurants: [RestaurantListViewModel] {
         if searchText.isEmpty {
             return restaurants
         }
@@ -62,13 +63,12 @@ final class RestaurantListPresenter: RestaurantListPresenting {
         errorMessage = nil
         
         fetcher.fetchRestaurants()
-            .map { [unowned self] restaurants in
-                restaurants.map { makeViewModel(restaurant: $0) }
-            }
-            .map { viewModels in
+            .map { restaurants in
                 // Sort by best deals first (highest discount percentage)
-                viewModels.sorted { vm1, vm2 in
-                    vm1.maxDiscount > vm2.maxDiscount
+                restaurants.sorted { r1, r2 in
+                    let maxDiscount1 = r1.deals.compactMap { Int($0.discount) }.max() ?? 0
+                    let maxDiscount2 = r2.deals.compactMap { Int($0.discount) }.max() ?? 0
+                    return maxDiscount1 > maxDiscount2
                 }
             }
             .receive(on: DispatchQueue.main)
@@ -80,7 +80,9 @@ final class RestaurantListPresenter: RestaurantListPresenting {
                         self?.errorMessage = error.localizedDescription
                     }
                 },
-                receiveValue: { [weak self] viewModels in
+                receiveValue: { [weak self] restaurants in
+                    self?.restaurantModels = restaurants
+                    let viewModels = restaurants.map { RestaurantListViewModel(from: $0) }
                     self?.allRestaurants = viewModels
                     self?.restaurants = viewModels
                 }
@@ -93,21 +95,10 @@ final class RestaurantListPresenter: RestaurantListPresenting {
         loadRestaurants()
     }
     
-    func select(restaurant: RestaurantViewModel) {
-        // Point to intercept or do some logic processing before sending to the Router
-        detailsSubject.send(restaurant)
-    }
-    
-    private func makeViewModel(restaurant: Restaurant) -> RestaurantViewModel {
-        RestaurantViewModel(
-            id: restaurant.objectId,
-            name: restaurant.name,
-            address: "\(restaurant.address1), \(restaurant.suburb)",
-            shortAddress: "0.5km Away, \(restaurant.suburb)",
-            cuisines: restaurant.cuisines.joined(separator: ", "),
-            imageURL: URL(string: restaurant.imageLink),
-            operatingHours: "\(restaurant.open) - \(restaurant.close)",
-            deals: restaurant.deals.map { DealViewModel(from: $0) }
-        )
+    func select(restaurant: RestaurantListViewModel) {
+        // Find the corresponding Restaurant model and send it
+        if let restaurantModel = restaurantModels.first(where: { $0.id == restaurant.id }) {
+            detailsSubject.send(restaurantModel)
+        }
     }
 }
