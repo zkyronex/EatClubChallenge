@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an iOS application built with SwiftUI for the EatClub coding challenge. The project uses Xcode 16.4 and targets iOS 18.5+.
+This is an iOS application built with SwiftUI for the EatClub coding challenge. The project uses Xcode 16.4 and targets iOS 18.0+.
 
 ## Common Development Commands
 
@@ -32,14 +32,14 @@ The project implements Clean Architecture using Model-View-Presenter (MVP) patte
 ```
 EatClubChallenge/
 ├── Core/
-│   ├── Models/           # Domain models
 │   ├── APIService/       # Generic networking layer
 │   └── Extensions/       # Shared extensions
 ├── Features/
 │   └── [FeatureName]/
-│       ├── Models/       # Feature-specific models
+│       ├── Models/       # Feature-specific models (can be used as APIModels for brevity)
 │       ├── Views/        # SwiftUI views
 │       ├── Presenters/   # Business logic and state management
+│       ├── ViewModels/   # UI representation models (structs or classes depending if the UI stack is nested)
 │       └── Fetchers/     # Data fetching implementation
 ├── Router/
 │   ├── Router.swift      # Navigation coordinator
@@ -64,19 +64,28 @@ EatClubChallenge/
    - Implements business logic
    - Manages view state using Combine
    - Coordinates with Fetcher for data operations
-   - Protocol-based for testability
+   - Protocol-based for testability using the suffix -ing ie: FeatureAPresenting
+   - 100% Unit testable
 
 3. **Fetcher Layer**
-   - Implementation detail layer
-   - Handles data fetching logic
-   - Transforms API responses to domain models
+   - Implementation detail layer to recieve and send data from an repository (may it be remote like an API or local like a Database)
+   - Transforms API responses to domain models (the actual model will be dictated via the Fetching protocol defined by Presenters/Interactors/Managers)
    - Can implement caching, local storage
+   - Protocol-based for testability using the suffix -ing ie: FeatureAFetching
+   - 100% Unit testable
 
 4. **APIService Layer**
    - Generic networking implementation
    - JSON decoding with Codable
    - Centralized error handling
    - Returns Combine publishers
+
+5. **Manager Layer**
+   - Singleton classes that are injected via the -Managing protocol
+   - Handles app-wide state management that is relevant to multiple feature stacks
+   - 100% Unit testable
+
+Noting that the above is created an as-necessary manner to allow the architecture to expand / shrink based on requirements
 
 ### Router Pattern Implementation
 ```swift
@@ -96,13 +105,13 @@ router.navigate(to: .feature(hostingController))
 
 ### Project Configuration
 - **Bundle ID**: `com.jasonchan.eatclubchallenge.EatClubChallenge`
-- **Minimum iOS**: 18.5 (beta)
+- **Minimum iOS**: 18.0
 - **Swift Version**: 5.0
-- **UI Framework**: SwiftUI only (no UIKit)
+- **UI Framework**: SwiftUI & UIKit
 
 ## Important Notes
 
-1. **iOS 18.5 Requirement**: This project targets iOS 18.5, which is a very recent/beta version. Ensure any APIs used are available in this version.
+1. **iOS 18.0 Requirement**: This project targets iOS 18.0 and up. Ensure any APIs used are available in this version.
 
 2. **No External Dependencies**: The project currently has no Swift Package Manager, CocoaPods, or Carthage dependencies. If adding dependencies, use Swift Package Manager via Xcode.
 
@@ -165,7 +174,7 @@ Use modern String Catalogs (.xcstrings) for internationalization:
 - **Views**: Keep them dumb, only UI logic
 - **Presenters**: All business logic, state management, and coordination
 - **Fetchers**: Hide implementation details (network, cache, database)
-- **Models**: Plain data structures, no business logic
+- **Models**: Plain data structures, no business logic (For brevity/read-only use cases, can have Decodable and used as APIModels)
 
 ### Combine Best Practices
 - Use `@Published` for observable state in Presenters
