@@ -7,39 +7,13 @@ struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation bar replacement
-            VStack(spacing: 16) {
-                // Top bar with icons
-                HStack {
-                    Image(systemName: "person")
-                        .font(.system(size: 24))
-                        .foregroundColor(.primaryText)
-                    
-                    Spacer()
-                    
-                    Image("eat-club-icon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 48, height: 48)
-                        .foregroundColor(.eatClubOrange)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 24))
-                        .foregroundColor(.primaryText)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
-                
-                // Search bar
-                SearchBarView(
-                    searchText: $presenter.searchText,
-                    placeholder: "e.g. chinese, pizza"
-                )
-                .padding(.horizontal, 16)
-            }
-            .padding(.bottom, 8)
+            // Search bar
+            SearchBarView(
+                searchText: $presenter.searchText,
+                placeholder: "e.g. chinese, pizza"
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color.white)
             
             // Content

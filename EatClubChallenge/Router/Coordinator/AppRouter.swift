@@ -20,10 +20,36 @@ final class AppRouter: Router {
         // Configure navigation bar appearance globally
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .white
+        appearance.shadowColor = .clear
+        appearance.shadowImage = UIImage()
         
+        // Configure title attributes
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.black,
+            .font: UIFont.systemFont(ofSize: 18, weight: .semibold)
+        ]
+        
+        appearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor.black,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
+        ]
+        
+        // Configure button appearances
+        let buttonAppearance = UIBarButtonItemAppearance()
+        buttonAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor.black
+        ]
+        appearance.buttonAppearance = buttonAppearance
+        appearance.doneButtonAppearance = buttonAppearance
+        appearance.backButtonAppearance = buttonAppearance
+        
+        // Apply to all navigation bars
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
         UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().tintColor = .black
+        UINavigationBar.appearance().isTranslucent = false
     }
     
     private func prepare(childViewController: UIViewController) {
