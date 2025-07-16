@@ -4,15 +4,34 @@ struct RestaurantViewModel: Identifiable {
     let id: String
     let name: String
     let address: String
+    let shortAddress: String
     let cuisines: String
     let imageURL: URL?
     let operatingHours: String
     let deals: [DealViewModel]
+    let hasDineIn: Bool = true
+    let hasTakeaway: Bool = true
+    let hasOrderOnline: Bool = true
+    
+    var bestDeal: DealViewModel? {
+        // Sort deals by discount percentage (highest first) and return the best one
+        deals.max { deal1, deal2 in
+            let discount1 = Int(deal1.discount) ?? 0
+            let discount2 = Int(deal2.discount) ?? 0
+            return discount1 < discount2
+        }
+    }
+    
+    var maxDiscount: Int {
+        let discounts = deals.compactMap { Int($0.discount) }
+        return discounts.max() ?? 0
+    }
     
     init(from restaurant: Restaurant) {
         self.id = restaurant.objectId
         self.name = restaurant.name
         self.address = "\(restaurant.address1), \(restaurant.suburb)"
+        self.shortAddress = "0.5km Away, \(restaurant.suburb)"
         self.cuisines = restaurant.cuisines.joined(separator: ", ")
         self.imageURL = URL(string: restaurant.imageLink)
         self.operatingHours = "\(restaurant.open) - \(restaurant.close)"

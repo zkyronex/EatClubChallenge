@@ -3,12 +3,49 @@ import SwiftUI
 struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
     @ObservedObject var presenter: Presenter
     var onRestaurantSelected: ((RestaurantViewModel) -> Void)?
+    @State private var selectedTab: Int = 1 // Moon icon selected by default
     
     var body: some View {
-        NavigationView {
+        VStack(spacing: 0) {
+            // Navigation bar replacement
+            VStack(spacing: 16) {
+                // Top bar with icons
+                HStack {
+                    Image(systemName: "person")
+                        .font(.system(size: 24))
+                        .foregroundColor(.primaryText)
+                    
+                    Spacer()
+                    
+                    Image("eat-club-icon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 48, height: 48)
+                        .foregroundColor(.eatClubOrange)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 24))
+                        .foregroundColor(.primaryText)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                
+                // Search bar
+                SearchBarView(
+                    searchText: $presenter.searchText,
+                    placeholder: "e.g. chinese, pizza"
+                )
+                .padding(.horizontal, 16)
+            }
+            .padding(.bottom, 8)
+            .background(Color.white)
+            
+            // Content
             content
-                .navigationTitle("Restaurants")
         }
+        .background(Color.backgroundGray)
         .onAppear {
             presenter.loadRestaurants()
         }
@@ -19,58 +56,32 @@ struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
         if presenter.isLoading && presenter.restaurants.isEmpty {
             ProgressView("Loading...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.backgroundGray)
         } else if let errorMessage = presenter.errorMessage {
             ErrorView(message: errorMessage) {
                 presenter.refresh()
             }
+            .background(Color.backgroundGray)
         } else {
             restaurantList
         }
     }
     
     private var restaurantList: some View {
-        List(presenter.restaurants) { restaurant in
-            RestaurantRowView(restaurant: restaurant)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onRestaurantSelected?(restaurant)
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(presenter.filteredRestaurants) { restaurant in
+                    RestaurantCardView(restaurant: restaurant)
+                        .onTapGesture {
+                            onRestaurantSelected?(restaurant)
+                        }
                 }
+            }
+            .padding(16)
         }
         .refreshable {
             presenter.refresh()
         }
-    }
-}
-
-struct RestaurantRowView: View {
-    let restaurant: RestaurantViewModel
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(restaurant.name)
-                .font(.headline)
-            
-            Text(restaurant.address)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            Text(restaurant.cuisines)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            if !restaurant.deals.isEmpty {
-                HStack {
-                    Image(systemName: "tag.fill")
-                        .foregroundColor(.orange)
-                        .font(.caption)
-                    
-                    Text("\(restaurant.deals.count) deals available")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
-            }
-        }
-        .padding(.vertical, 4)
     }
 }
 
@@ -82,7 +93,7 @@ struct ErrorView: View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.largeTitle)
-                .foregroundColor(.red)
+                .foregroundColor(.eatClubRed)
             
             Text("Error")
                 .font(.headline)
@@ -90,12 +101,16 @@ struct ErrorView: View {
             Text(message)
                 .font(.body)
                 .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+                .foregroundColor(.secondaryText)
             
             Button("Retry") {
                 retry()
             }
-            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 32)
+            .padding(.vertical, 12)
+            .background(Color.eatClubOrange)
+            .foregroundColor(.white)
+            .cornerRadius(8)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
