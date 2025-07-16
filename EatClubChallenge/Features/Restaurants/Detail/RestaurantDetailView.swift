@@ -42,8 +42,7 @@ struct RestaurantDetailView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                         } placeholder: {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
+                            ImagePlaceholderView()
                         }
                         .frame(height: 250)
                         .clipped()
