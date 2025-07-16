@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
     @ObservedObject var presenter: Presenter
+    var onRestaurantSelected: ((RestaurantViewModel) -> Void)?
     
     var body: some View {
         NavigationView {
@@ -30,6 +31,10 @@ struct RestaurantListView<Presenter: RestaurantListPresenting>: View {
     private var restaurantList: some View {
         List(presenter.restaurants) { restaurant in
             RestaurantRowView(restaurant: restaurant)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onRestaurantSelected?(restaurant)
+                }
         }
         .refreshable {
             presenter.refresh()
