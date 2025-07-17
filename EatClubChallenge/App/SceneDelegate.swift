@@ -11,6 +11,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = router.viewController
         
+        // Force light mode for the entire app
+        window.overrideUserInterfaceStyle = .light
+        
         self.window = window
         self.window?.makeKeyAndVisible()
     }
